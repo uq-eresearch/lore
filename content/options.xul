@@ -88,6 +88,7 @@
             <preference id="annoserver_pref" name="extensions.lore.annoserver" type="unichar"/>
             <preference id="solr_pref" name="extensions.lore.solr" type="unichar"/>
             <preference id="annorepostype_pref" name="extensions.lore.annorepostype" type="unichar"/>
+            <preference id="rdfrepostype_pref" name="extensions.lore.rdfrepostype" type="unichar"/>
         </preferences>
         <label control="text_annoserver">&annoserver.label;</label>
         <menulist editable="true" id="text_annoserver" preference="annoserver_pref"  oncommand="document.getElementById('text_annoserver').value = event.target.value; Components.classes['@mozilla.org/preferences-service;1'].getService(Components.interfaces.nsIPrefBranch).setCharPref('extensions.lore.annorepostype','danno');">
@@ -100,6 +101,14 @@
             <radiogroup preference="annorepostype_pref" disabled="false">
                  <radio id="annotea_radio" label="Annotea" value="danno"/>
                  <radio id="oac_radio" label="OAC" value="lorestore"/>
+                 <radio id="sparql_radio" label="SPARQL" value="fuseki"/>
+            </radiogroup>
+        </groupbox>
+        <groupbox>
+            <caption label="&rdfrepostype.label;"/>
+            <radiogroup preference="rdfrepostype_pref" disabled="false">
+                 <radio id="oac_radio" label="OAC" value="lorestore"/>
+                 <radio id="sparql_radio" label="SPARQL" value="fuseki"/>
             </radiogroup>
         </groupbox>
         <label control="text_solr">&solr.label;</label>

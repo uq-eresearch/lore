@@ -589,14 +589,19 @@ try {
                 loreoverlay.coView().handlePreferencesChanged({
                     creator: this.prefs.getCharPref("dccreator"),
                     relonturl: this.prefs.getCharPref("relonturl"),
-                    rdfrepos: (rdfReposType == 'lorestore'? annoserver + "/ore/" : this.prefs.getCharPref("rdfrepos")),
+                    rdfrepos: (rdfReposType == 'lorestore'? annoserver + "/ore/" : rdfReposType == 'fuseki' ? annoserver : this.prefs.getCharPref("rdfrepos")),
                     rdfrepostype: this.prefs.getCharPref("rdfrepostype"),
-                    annoserver: annoserver + (annoReposType == "danno" ? "/annotea" : "/oac/"),
+                    annoserver: annoserver + (annoReposType == "danno" ? "/annotea" : (annoReposType == "lorestore" ? "/oac/" : "")),
                     disable: disable_co,
                     high_contrast: this.prefs.getBoolPref("high_contrast"),
                     ontologies: ontologies,
                     editor: this.prefs.getCharPref("coeditor")
                 });
+                if (rdfReposType == 'fuseki') {
+                	this.disableCompoundObjectLogin();
+                } else {
+                	this.enableCompoundObjectLogin();
+                }
                 if(!ignoreDisable){
                     this.setCompoundObjectsVisibility(!disable_co);
                 }
@@ -613,7 +618,7 @@ try {
                 var annoReposType = this.prefs.getCharPref("annorepostype");
                 loreoverlay.annoView().setPrefs({
                     creator: this.prefs.getCharPref("dccreator"),
-                    url: annoserver + (annoReposType == "danno" ? "/annotea" : "/oac/"),
+                    url: annoserver + (annoReposType == "danno" ? "/annotea" : (annoReposType == "lorestore" ? "/oac/" : "")),
                     solr: this.prefs.getCharPref("solr"),
                     cacheTimeout: (this.prefs.getIntPref("annocache_timeout") * 1000), // to millis
                     loginUrl: loginUrl,
@@ -623,6 +628,11 @@ try {
                     metadataOntologyURL: this.prefs.getCharPref("annotationMetadataOntologyURL"),
                     annorepostype: this.prefs.getCharPref("annorepostype")
                 });
+                if (annoReposType == 'fuseki') {
+                	this.disableAnnotationLogin();
+                } else {
+                	this.enableAnnotationLogin();
+                }
                 if (this.authManager){
                     this.authManager.reloadEmmetUrls({url: annoserver});
                 }
@@ -883,6 +893,18 @@ try {
         variationContentWindowIsVisible: function () {
             return document.getElementById("oobAnnoVarContentBox").getAttribute("collapsed") == "false";
             
+        },
+        enableAnnotationLogin: function() {
+        	document.getElementById("auth-status-icon").hidden = false;
+        },
+        disableAnnotationLogin: function() {
+        	document.getElementById("auth-status-icon").hidden = true;
+        },
+        enableCompoundObjectLogin: function() {
+        	document.getElementById("auth-status-icon-co").hidden = false;
+        },
+        disableCompoundObjectLogin: function() {
+        	document.getElementById("auth-status-icon-co").hidden = true;
         },
         setSignedIn: function(username){
             this.setAnnotationsSignedIn(username);

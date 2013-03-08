@@ -173,9 +173,42 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
         decParentReplies(record);
     },
 
+    /**
+     * Add an annotation to the local store with a given identifier. This does 
+     * not add the annotation to the remote repository
+     * @param {String} currentContext Page context of the annotation. XPath string currently supported.
+     * @param {String} currentURL The URL for the page this annotation is on
+     * @param {Function} callback Function called once the annotation is created but hasn't yet been added to datastore
+     * @param {Object} parent (Optional) The parent of this annotation
+     * @param {String} uuid The identifier for this annotation
+	 */
+    addAnnotationWithID : function(currentContext, currentURL, callback, parent, uuid){
+        var anno = new lore.anno.Annotation({
+        	id: uuid,
+            resource: (parent ? parent.data.resource: currentURL),
+            about: (parent ? parent.data.id: null),
+            original: currentURL,
+            context: currentContext,
+            originalcontext: currentContext,
+            creator: this.prefs.creator,
+            created:  new Date().format('c'),
+            modified: new Date().format('c'),
+            body: "",
+            title: (parent ? "Re: " + parent.data.title:""),
+            type: lore.constants.NAMESPACES["annotype"] + "Comment",
+            lang: "en",
+            isReply: (parent ? true: null),
+            bodyLoaded: true
+        });
 
+        if (callback)   callback(anno);
 
+        lore.debug.anno('AM.addAnnotation()', {currentContext:currentContext,anno:anno});
 
+        this.annodsunsaved.loadData([anno], true);
+        return lore.util.findRecordById(this.annodsunsaved, anno.id);
+    },
+    
     /**
      * Add an annotation to the local store. This does not add the annotation
      * to the remote repository
@@ -278,12 +311,15 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
         var t = this;
         delete this.justUpdated;
         var callback = function(request, action) {
-            // parse response to get id of new/updated annotation
-            t.justUpdated = t.getUpdatedAnnotationURI(request);
-            if (action == 'create' || refresh) {
-                    lore.global.store.removeCache(lore.constants.ANNOTATIONS_STORE, currentURL);
-                    t.updateAnnotationsSourceList(currentURL);
+            if (request.responseXML) {
+            	// parse response to get id of new/updated annotation
+            	t.justUpdated = t.getUpdatedAnnotationURI(request);	            
             }
+            
+        	if (action == 'create' || refresh) {
+                lore.global.store.removeCache(lore.constants.ANNOTATIONS_STORE, currentURL);
+                t.updateAnnotationsSourceList(currentURL);
+        	}
         };
 
         this.sendUpdateRequest(annoRec, callback);
@@ -471,6 +507,7 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
                 .optional(annoterm + " dcterms:creator ?creator")
                 .optional(annoterm + " dc:language ?lang")
                 .optional(annoterm + " dc:title ?title")
+                .optional(annoterm + " oac:hasTarget ?context")
                 .optional(annoterm + " oac:hasTarget ?resource") 
                 .optional(annoterm + " dcterms:created ?created")
                 .optional(annoterm + " dcterms:modified ?modified")
@@ -499,7 +536,17 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
                 } else if(isReply && "context" ==p){
                     annoconfig.context = ''; // LORE ignores context for replies
                 } else if ("context" == p) {
-                    annoconfig[p] = lore.util.normalizeXPointer(aboutanno[p].value.toString());
+                	var context = aboutanno[p].value.toString();
+                	if (context.indexOf('#xpointer') >= 0) {
+                		annoconfig[p] = lore.util.normalizeXPointer(context);
+                	}
+                } else if ("resource" == p) {
+                	var resource = aboutanno[p].value.toString();
+                	if (resource.indexOf('#xpointer') >= 0) {
+                		var idx = resource.indexOf('#xpointer');
+                        resource = resource.substring(0, idx);
+                	}
+                	annoconfig[p] = resource;
                 } else if ("creator" == p){
                     var creator = aboutanno.creator;
                     if (creator.type == "uri"   || creator.type == "bnode"){
@@ -576,6 +623,89 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
     },
 
 
+    /**
+     * Creates an array of Annotations from a list of SPARQL nodes in ascending date
+     * created order 
+     *
+     * @param {XMLDoc} xmldoc
+     *            XML Document containing annotations
+     * @param {Boolean} bodyEmbedded (Optional) Specify whether the annotations came from a file. Defaults to false.
+     * @return {Array} ordered array of Annotations
+     */
+    createAnnotationsFromSPARQL : function(json, bodyEmbedded){      	
+    	processSPARQLProperties = function(binding){
+             var annoconfig = {
+                    isReply : false
+             };
+                          
+             for (var attr in binding) {              	 
+            	var name = attr;
+              	var value = binding[attr].value;
+            	 
+            	if ("g" == name) {
+            		annoconfig.id = value; 
+            	} else if ("root" == name){ // for replies, we store the root as resource
+                    annoconfig.resource = value;   
+                } else if ("privateAnno" == name){
+                    annoconfig.privateAnno = (value == "true"); 
+                } else if ("metacontext" == name){
+                    annoconfig.meta = { context: value.split('\n'), fields: []}; 
+                } else if ("context" == name) {
+                	var context = value;
+                	if (context.indexOf('#xpointer') >= 0) {
+                		annoconfig[name] = lore.util.normalizeXPointer(context);
+                	}
+                } else if ("resource" == name) {
+                	var resource = value;
+                	if (resource.indexOf('#xpointer') >= 0) {
+                		var idx = resource.indexOf('#xpointer');
+                        resource = resource.substring(0, idx);
+                	}
+                	annoconfig[name] = resource;
+                } else if ("creator" == name){
+                    var creator = value;
+                    if (creator.type == "uri"   || creator.type == "bnode"){
+                       var creatorData = rdfobj.where(creator.toString() + " foaf:name ?name").get(0);
+                       if (creatorData.name){
+                          annoconfig.creator = creatorData.name.value.toString();
+                       } else {
+                          annoconfig.creator = creator.toString();
+                       }
+                    } else {
+                          annoconfig.creator = creator;
+                    }
+                } else if ("bodyURL" == name){
+                	if (binding["body"].value) {
+                        annoconfig.body = binding["body"].value;
+                        annoconfig.bodyLoaded = true;
+                        annoconfig.bodyURL = value;
+                	}
+                } else if ("type" == name){
+                	if (value.indexOf(lore.constants.NAMESPACES["oac"]) >= 0) {
+                   	    annoconfig.type = value;
+                    }
+                } else {
+                    annoconfig[name] = value;
+                }
+             }
+             return annoconfig;
+        };
+        
+        var tmp = [];
+    	var json = JSON.parse(json);      
+            	
+    	for (var i = 0; i < json.results.bindings.length; i++) {    		
+    		var annoconfig = processSPARQLProperties(json.results.bindings[i]);
+            lore.debug.anno("anno config - " + annoconfig.id, annoconfig);
+            var tmpAnno = new lore.anno.Annotation(annoconfig);
+            tmp.push(tmpAnno);
+    	}
+    	
+        return tmp.length <= 1 ? tmp : tmp.sort(function(a, b){
+            return (a.created > b.created ? 1 : -1);
+        });
+    },
+    
     /**
      * Get annotation body value. modified from dannotate.js getAjaxRespSync
      *
@@ -981,6 +1111,71 @@ lore.anno.AnnotationManager = Ext.extend(Ext.util.Observable, {
 
     },
 
+    /**
+     * Handler function that's called when annotation information is successfully
+     * returned from the server. Loads the annotations into the data store and loads
+     * the replies for annotations from the server.
+     * @param {Object} resp Response from the server
+     * @param {Function} filterFunction filters the returned annotations, and only loads
+     *                  those matching the filter
+     */
+    handleSPARQLAnnotationsLoaded : function(resp, filterFunction){     	
+        var xmldoc = resp.responseXML;
+        if (!xmldoc){
+            var dp = new DOMParser();
+            xmldoc = dp.parseFromString(resp.responseText, "text/xml");
+        }
+        lore.debug.anno("handleAnnotationsLoaded",resp);
+
+        var annotations;
+        annotations = this.createAnnotationsFromSPARQL(resp.responseText);
+
+        if (annotations.length > 0) {
+            if (filterFunction) {
+                annotations = annotations.filter(filterFunction);
+            }
+            lore.debug.anno('handleAnnotationsLoaded() loaded ' + annotations.length + ' annotations', {annotations:annotations});
+            // cater for tab change while annotations were downloaded from server
+            // FIXME, this is broken, anno is not set here
+            if (this.locationChanged(anno)) {
+                lore.debug.anno("Apparently, tab changed while annotations were downloading", {annotations:annotations});
+                return;
+            }
+
+            for (var i = 0; i < annotations.length; i++) {
+                try {
+                    if (!annotations[i].bodyLoaded){
+                        this.getBodyContentAsync(annotations[i], window);
+                    }
+                }
+                catch (e) {
+                    lore.debug.anno('Error loading body content', e);
+                }
+            }
+
+            this.loadAnnotation(annotations);
+
+
+            // get annotation replies
+            for (var i = 0; i < annotations.length; i++) {
+                var anno = annotations[i];
+                var annoID = anno.id;
+                var annoType = anno.type;
+                
+                if (lore.anno.reposAdapter){
+                    lore.debug.anno("getting replies for anno " + i);
+                    lore.anno.reposAdapter.getRepliesQuery(annoID, this);
+                }
+                
+            }
+            if (this.justUpdated){
+                lore.debug.anno("Annotation Manager updated an annotation " + this.justUpdated); 
+            }
+            this.fireEvent("annotationsloaded", annotations.length);
+        }
+
+    },
+    
     /**
      * Handler function that is called when for each annotation that has replies.
      * The replies are loaded into the data store

@@ -577,7 +577,8 @@ Ext.apply(lore.ore.Controller.prototype, {
         });
     },
     lockCompoundObjectInRepository: function(){
-        if (!lore.ore.reposAdapter instanceof lore.ore.repos.RestAdapter){
+        if (!(lore.ore.reposAdapter instanceof lore.ore.repos.RestAdapter ||
+         	lore.ore.reposAdapter instanceof lore.ore.repos.SPARQLAdapter)){
             Ext.Msg.show({
                 title: "Not supported",
                 msg: "Locking of Resource Maps is only supported for lorestore repositories.",
@@ -1147,8 +1148,12 @@ Ext.apply(lore.ore.Controller.prototype, {
             }*/
             if (currentCOMsg) {currentCOMsg.setText(Ext.util.Format.ellipsis(title, 50),false);}
         }
-        
-        lore.ore.reposAdapter = new lore.ore.repos.RestAdapter(rdfrepos);
+                
+        if (rdfrepostype == 'lorestore') {
+        	lore.ore.reposAdapter = new lore.ore.repos.RestAdapter(rdfrepos);
+        } else {
+        	lore.ore.reposAdapter = new lore.ore.repos.SPARQLAdapter(rdfrepos);
+        }
         
         if (isEmpty) {
                 // empty Resource Map, reset it to get a new id

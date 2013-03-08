@@ -207,6 +207,8 @@ Ext.apply(lore.anno.Controller.prototype, {
             lore.anno.reposAdapter = new lore.anno.repos.DannoAdapter(args.url);
         } else if (args.annorepostype == 'lorestore'){
             lore.anno.reposAdapter = new lore.anno.repos.RestAdapter(args.url);
+        } else if (args.annorepostype == 'fuseki'){
+            lore.anno.reposAdapter = new lore.anno.repos.SPARQLAdapter(args.url);
         }
         try{
             Ext.getCmp('solrsearch').ds.proxy.setUrl(args.solr + "/select",true);
@@ -286,13 +288,15 @@ Ext.apply(lore.anno.Controller.prototype, {
                             }
                         }
                     });
-                    node.contextmenu.add({
-                        text: "View annotation in browser",
-                        icon: "../../skin/icons/page_go.png",
-                        handler: function (evt) {
-                            lore.util.launchTab(node.id + "?danno_useStylesheet");
-                        }
-                    });
+                    if (!(lore.anno.reposAdapter instanceof lore.anno.repos.SPARQLAdapter)) {
+                    	node.contextmenu.add({
+                        	text: "View annotation in browser",
+                        	icon: "../../skin/icons/page_go.png",
+                        	handler: function (evt) {
+                        		lore.util.launchTab(node.id + "?danno_useStylesheet");
+                        	}
+                    	});
+                    }
                     if (node.nodeType == lore.constants.NAMESPACES["vanno"] + "VariationAnnotation") {
                         node.contextmenu.add({
                             text: "Show Variation Window",
@@ -549,13 +553,21 @@ Ext.apply(lore.anno.Controller.prototype, {
                     lore.debug.anno("Error in addSelectNodeHandler", e);
                 }
             };
-    
-            lore.anno.am.runWithAuthorisation(function() {
-                // FIXME: scoping
-                var newRec = lore.anno.annoMan.addAnnotation(currentContext, 
-                lore.anno.controller.currentURL, addSelectNodeHandler, rec);
+            
+            if (lore.anno.reposAdapter instanceof lore.anno.repos.SPARQLAdapter) {
+                var newRec = lore.anno.annoMan.addAnnotationWithID(currentContext, 
+                lore.anno.controller.currentURL, addSelectNodeHandler, 
+                rec, "uuid:" + lore.util.uuid());
+                
                 lore.anno.controller.selectAndShowNode(newRec);
-            });
+            } else {
+	            lore.anno.am.runWithAuthorisation(function() {
+	                // FIXME: scoping
+	                var newRec = lore.anno.annoMan.addAnnotation(currentContext, 
+	                lore.anno.controller.currentURL, addSelectNodeHandler, rec);
+	                lore.anno.controller.selectAndShowNode(newRec);
+	            });
+            }
         } catch (e) {
             lore.debug.anno("Error in handleAddAnnotation", e);
         }
@@ -597,24 +609,38 @@ Ext.apply(lore.anno.Controller.prototype, {
             return;
         }
     
-        lore.anno.am.runWithAuthorisation(function (principal) {
-            if (!rec.data.agentId || principal.primaryUri === rec.data.agentId) {
-                Ext.MessageBox.show({
-                    title: 'Delete annotation',
-                    msg: msg,
-                    buttons: Ext.MessageBox.YESNO,
-                    fn: function (btn) {
-                        if (btn == 'yes')
-                        // FIXME: scoping
-                            lore.anno.controller.handleDeleteAnnotation2(rec);
-                    },
-                    icon: Ext.Msg.QUESTION
-                });
-            } else {
-                lore.debug.anno("Cannot delete annotation",[principal, rec.data.agentId]);
-                lore.anno.ui.loreWarning('Annotation belongs to another user, cannot delete.');
-            }
-        });
+        if (lore.anno.reposAdapter instanceof lore.anno.repos.SPARQLAdapter) {
+            Ext.MessageBox.show({
+                title: 'Delete annotation',
+                msg: msg,
+                buttons: Ext.MessageBox.YESNO,
+                fn: function (btn) {
+                    if (btn == 'yes')
+                    // FIXME: scoping
+                        lore.anno.controller.handleDeleteAnnotation2(rec);
+                },
+                icon: Ext.Msg.QUESTION
+            });
+        } else {
+        	lore.anno.am.runWithAuthorisation(function (principal) {
+                if (!rec.data.agentId || principal.primaryUri === rec.data.agentId) {
+                    Ext.MessageBox.show({
+                        title: 'Delete annotation',
+                        msg: msg,
+                        buttons: Ext.MessageBox.YESNO,
+                        fn: function (btn) {
+                            if (btn == 'yes')
+                            // FIXME: scoping
+                                lore.anno.controller.handleDeleteAnnotation2(rec);
+                        },
+                        icon: Ext.Msg.QUESTION
+                    });
+                } else {
+                    lore.debug.anno("Cannot delete annotation",[principal, rec.data.agentId]);
+                    lore.anno.ui.loreWarning('Annotation belongs to another user, cannot delete.');
+                }
+            });
+        }
     },
     
     /**
@@ -815,12 +841,18 @@ Ext.apply(lore.anno.Controller.prototype, {
                 lore.anno.ui.loreError("Save the annotation first before replying to it.");
                 return;
             }
-    
-            lore.anno.am.runWithAuthorisation(function () {
-                lore.anno.ui.tabpanel.activate('treeview');
+            
+            if (lore.anno.reposAdapter instanceof lore.anno.repos.SPARQLAdapter) {
+            	lore.anno.ui.tabpanel.activate('treeview');
                 // FIXME: scoping
                 lore.anno.controller.handleAddAnnotation(rec);
-            });
+            } else {
+            	lore.anno.am.runWithAuthorisation(function () {
+                    lore.anno.ui.tabpanel.activate('treeview');
+                    // FIXME: scoping
+                    lore.anno.controller.handleAddAnnotation(rec);
+                });
+            }   
         } catch (e) {
             lore.debug.anno("Error in handleReplyToAnnotation", e);
         }
@@ -844,17 +876,22 @@ Ext.apply(lore.anno.Controller.prototype, {
                 rec = lore.anno.annoMan.findStoredRecById(lore.anno.ui.nodeIdToRecId(node));
             }
     
-    
-            lore.anno.am.runWithAuthorisation(function (principal) {
-                if (principal.primaryUri === rec.data.agentId || !rec.data.agentId) {
-                    rec = lore.anno.annoMan.editRec(rec);
-                    // FIXME: scoping
-                    lore.anno.controller.selectAndShowNode(rec);
-                } else {
-                    lore.anno.ui.loreWarning('Annotation belongs to another user, saving disabled.');
-                    lore.anno.controller.selectAndShowNode(rec, true);
-                }
-            });
+            if (lore.anno.reposAdapter instanceof lore.anno.repos.SPARQLAdapter) {
+            	rec = lore.anno.annoMan.editRec(rec);
+                // FIXME: scoping
+                lore.anno.controller.selectAndShowNode(rec);
+            } else {
+            	lore.anno.am.runWithAuthorisation(function (principal) {
+                    if (principal.primaryUri === rec.data.agentId || !rec.data.agentId) {
+                        rec = lore.anno.annoMan.editRec(rec);
+                        // FIXME: scoping
+                        lore.anno.controller.selectAndShowNode(rec);
+                    } else {
+                        lore.anno.ui.loreWarning('Annotation belongs to another user, saving disabled.');
+                        lore.anno.controller.selectAndShowNode(rec, true);
+                    }
+                });
+            }
         } catch (e) {
             lore.debug.anno("Error in handleEdit", e);
         }

@@ -153,6 +153,7 @@ lore.draw2d.Connection = Ext.extend(lore.draw2d.Line, {
           if (this.model && this.targetPort && this.edgetype){
               var targetVal = this.targetPort.getParent().url;
               var props = this.model.get('properties');
+              var prop = this.edgens + this.edgetype;
               var propIndex = props.findProperty(prop, targetVal);
               if (propIndex == -1){
                 var propData = {

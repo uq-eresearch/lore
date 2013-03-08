@@ -267,7 +267,8 @@ lore.ore.ui.Viewport = Ext.extend(Ext.Viewport, {
                                        tooltip: "Show feed",
                                        handler: function(){
                                            try{
-                                            if (lore.ore.reposAdapter && lore.ore.reposAdapter instanceof lore.ore.repos.RestAdapter){
+                                            if (lore.ore.reposAdapter && (lore.ore.reposAdapter instanceof lore.ore.repos.RestAdapter ||
+                                            		lore.ore.reposAdapter instanceof lore.ore.repos.SPARQLAdapter)){
                                                  var queryURL = lore.ore.reposAdapter.reposURL + "feed?refersTo=" + lore.ore.controller.currentURL.replace(/&/g,'%26');
                                                  lore.util.launchTab(queryURL,window);
                                             } else {

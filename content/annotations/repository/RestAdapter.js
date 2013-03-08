@@ -136,6 +136,7 @@ lore.anno.repos.RestAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
             // Update the annotation on the server via HTTP PUT
             var action = 'create';
             var successfulStatus = 200;
+            xhr.open("PUT", annoRec.data.id);
         }
         xhr.onreadystatechange = function(){
             try {

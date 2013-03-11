@@ -105,13 +105,10 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
           + theco["uri"] + '\r\n'
           + '--' + boundary + '--';
                 
+    	lore.debug.ore("YOMAN1");
+    	lore.debug.ore(this.reposURL + "/upload");
+        
         var insertData = function() {
-        	var xhr = new XMLHttpRequest();
-            
-            lore.debug.ore("lorestore: saving new Resource Map", theco);
-            
-            xhr.open("POST", this.reposURL + "/upload");
-            xhr.setRequestHeader("Content-type", "multipart/form-data; boundary=" + boundary);
             theURL = this.reposURL + "/upload";
             xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4) {
@@ -154,6 +151,11 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
             };
             xhr.send(body);
         }
+        
+    	var xhr = new XMLHttpRequest();
+    	
+        xhr.open("POST", this.reposURL + "/upload");
+        xhr.setRequestHeader("Content-type", "multipart/form-data; boundary=" + boundary);
         
         var oThis = this;
         Ext.Msg.show({
@@ -266,7 +268,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
     },
     
     generateID : function() {
-    	return this.reposURL + lore.draw2d.UUID.create();
+    	return this.reposURL + "/" + lore.draw2d.UUID.create();
     },
     /**
     * Parses Resource Map details from a SPARQL XML result

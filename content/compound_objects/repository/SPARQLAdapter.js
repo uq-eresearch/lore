@@ -92,86 +92,51 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
     saveCompoundObject : function (theco,callback){
         var remid = theco.uri;
 
-        var therdf = theco.serialize('application/rdf+xml');
-        
-    	var boundary = "---------------------------7da24f2e50046";
-        var body = 'Content-Type: multipart/form-data; boundary=' + boundary + '\r\n\r\n'
-          + '--' + boundary + '\r\n'
-          + 'Content-Disposition: form-data; name=\"UNSET FILE NAME\"; filename=\"temp.rdf\"\r\n'
-          + 'Content-type: application/rdf+xml\r\n\r\n'
-          + therdf + '\r\n'
-          + '--' + boundary + '\r\n'
-          + 'Content-Disposition: form-data; name=\"graph\";\r\n\r\n'
-          + theco["uri"] + '\r\n'
-          + '--' + boundary + '--';
-                
-    	lore.debug.ore("YOMAN1");
-    	lore.debug.ore(this.reposURL + "/upload");
-        
-        var insertData = function() {
-            theURL = this.reposURL + "/upload";
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) {
-                    Ext.Msg.hide();
-                    if (xhr.status == 200) { // OK
-                        lore.debug.ore("lorestore: RDF saved", xhr);
-                        lore.ore.ui.vp.info("Resource Map " + remid + " saved");
-                        callback(remid);
-                    } else if (xhr.status == 201) { // Created
-                        lore.debug.ore("lorestore: RDF saved", xhr);
-                        var location = xhr.getResponseHeader("Location");
-                        lore.debug.ore("New CO URI is: " + location);
-                        lore.ore.ui.vp.info("Resource Map " + remid + " saved");
-                        lore.ore.controller.loadCompoundObject(xhr);
-                        callback(location);
-                    } else {
-                        lore.debug.ore("Error: Unable to save Resource Map " + remid + " to " + theURL, {
-                            xhr : xhr,
-                            headers : xhr.getAllResponseHeaders()
-                            
-                        });
-                        lore.ore.ui.vp.error('Unable to save to repository: ' + xhr.statusText);
-                        var msg;
-                        if (xhr.status == 403) {
-                            msg = "<b>Permission Denied</b><br><br>You are not signed in or you do not own this Resource Map</a>"
-                        } else {
-                            msg = '<b>' + xhr.statusText + '</b>'  
-                                + '<br><br>If an error has occurred, please save your Resource Map to a file using the <i>Export to RDF/XML</i> menu option from the toolbar and contact the Aus-e-Lit team with details of the error for further assistance.'
-                                + '<br><br><a style="text-decoration:underline;color:blue" href="#" onclick="lore.util.launchWindow(\'data:text/html,' + encodeURIComponent(xhr.responseText) + '\',false,window)\">View Details</a>';
-                        }
-                        Ext.Msg.show({
-                            title : 'Unable to save Resource Map',
-                            buttons : Ext.MessageBox.OK,
-                            defaultTextHeight: 100,
-                            msg : msg
-                        });
-                        
-                    }
-                }
-            };
-            xhr.send(body);
+        var sparqlData = theco.serialize('rdfquery');
+        var triples = sparqlData.databank.triples();
+        var trigs = "";
+        for (var i = 0; i < triples.length; i++) {
+            trigs += triples[i];
         }
-        
+          
     	var xhr = new XMLHttpRequest();
     	
-        xhr.open("POST", this.reposURL + "/upload");
-        xhr.setRequestHeader("Content-type", "multipart/form-data; boundary=" + boundary);
+        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
         
-        var oThis = this;
-        Ext.Msg.show({
-               msg: 'Saving Resource Map to repository...',
-               width:250,
-               defaultTextHeight: 0,
-               closable: false,
-               cls: 'co-load-msg'
-           });
-        try {
-        	//lore.ore.am.runWithAuthorisation(function() {    
-        	this.deleteCompoundObject(remid, insertData);
-            //});
-        } catch (e) {
-            lore.debug.ore("Error saving Resource Map", e);
-        }
+        theURL = this.reposURL + "/data?graph=" + remid;
+        xhr.onreadystatechange = function() {            
+            if (xhr.readyState == 4) {
+                Ext.Msg.hide();
+                if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) { // OK
+                    lore.debug.ore("lorestore: RDF saved", xhr);
+                    lore.ore.ui.vp.info("Resource Map " + remid + " saved");
+                    callback(remid);
+                } else {
+                    lore.debug.ore("Error: Unable to save Resource Map " + remid + " to " + theURL, {
+                        xhr : xhr,
+                        headers : xhr.getAllResponseHeaders()
+                        
+                    });
+                    lore.ore.ui.vp.error('Unable to save to repository: ' + xhr.statusText);
+                    var msg;
+                    if (xhr.status == 403) {
+                        msg = "<b>Permission Denied</b><br><br>You are not signed in or you do not own this Resource Map</a>"
+                    } else {
+                        msg = '<b>' + xhr.statusText + '</b>'  
+                            + '<br><br>If an error has occurred, please save your Resource Map to a file using the <i>Export to RDF/XML</i> menu option from the toolbar and contact the Aus-e-Lit team with details of the error for further assistance.'
+                            + '<br><br><a style="text-decoration:underline;color:blue" href="#" onclick="lore.util.launchWindow(\'data:text/html,' + encodeURIComponent(xhr.responseText) + '\',false,window)\">View Details</a>';
+                    }
+                    Ext.Msg.show({
+                        title : 'Unable to save Resource Map',
+                        buttons : Ext.MessageBox.OK,
+                        defaultTextHeight: 100,
+                        msg : msg
+                    });
+                    
+                }
+            }
+        };
+        xhr.send(trigs);
     },
     loadNew : function(oldURI, newURI) {
         lore.ore.cache.remove(oldURI);
@@ -181,13 +146,14 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
     },
     deleteCompoundObject : function(remid, callback){
         lore.debug.ore("deleting from lorestore repository " + remid);
+        lore.debug.ore(this.reposURL + "/data?graph=" + remid);
         try {
     	   	//lore.ore.am.runWithAuthorisation(function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", this.reposURL + "/update");  
-            xhr.onreadystatechange= function(){
+            xhr.open("DELETE", this.reposURL + "/data?graph=" + remid);  
+            xhr.onreadystatechange= function(){  
                 if (xhr.readyState == 4) {
-                    if (xhr.status == 200) { // OK
+                    if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) { // OK
                         callback(remid);
                     } else {
                         lore.ore.ui.vp.error('Unable to delete Resource Map' + xhr.statusText);
@@ -207,8 +173,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
                     }
                 }
             };
-            xhr.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-            xhr.send("update=CLEAR GRAPH <" + remid + ">");
+            xhr.send();
             //});
         } catch (e){
             Ext.MessageBox.hide();

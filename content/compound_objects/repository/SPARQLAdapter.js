@@ -146,7 +146,6 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
     },
     deleteCompoundObject : function(remid, callback){
         lore.debug.ore("deleting from lorestore repository " + remid);
-        lore.debug.ore(this.reposURL + "/data?graph=" + remid);
         try {
     	   	//lore.ore.am.runWithAuthorisation(function() {
             var xhr = new XMLHttpRequest();

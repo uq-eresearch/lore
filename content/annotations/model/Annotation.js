@@ -399,10 +399,23 @@ Ext.apply(lore.anno.OACAnnotationSerializer.prototype, {
                         rdfdb.prefix(ns,lore.constants.NAMESPACES[ns]);
                     }
                 }
+                if (sformat == "triples") {
+                    // if exporting to trig, reset databank for each anno
+                    var triples = rdfdb.triples();
+                    for (var t = 0; t < triples.length; t++){
+                     var triple = triples[t];
+                     result += triple.toString() + "\n"; 
+                    }
+                    rdfdb = jQuery.rdf.databank();
+                    for (ns in lore.constants.NAMESPACES){
+                        rdfdb.prefix(ns,lore.constants.NAMESPACES[ns]);
+                    }
+                	
+                }
             }
         };
         lore.debug.anno("OAC JSON",Ext.util.JSON.encode(rdfdb.dump({format:'application/json', serialize:false})));
-        if (sformat == "trig"){
+        if (sformat == "trig" || sformat == "triples"){
             return result;  
         } else {
             return rdfdb.dump({format:'application/rdf+xml',serialize:true});

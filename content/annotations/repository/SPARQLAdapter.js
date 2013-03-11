@@ -12,22 +12,22 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
     getAnnotatesQuery : function(matchuri, scope, filterFunction){
     	 var queryUrl = this.reposURL + "/query?query=";
     	 queryUrl += encodeURIComponent("SELECT DISTINCT ?g ?type ?creator ?lang ?title ?context ?resource ?created ?modified ?body ?bodyURL ?privateAnno ?agentId ");
-    	 queryUrl += encodeURIComponent("WHERE {{ ?g <http://www.openannotation.org/ns/hasTarget> <" + matchuri + ">.}");
-    	 queryUrl += encodeURIComponent("UNION { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://purl.org/dc/terms/isPartOf><" + matchuri +">}");
-    	 queryUrl += encodeURIComponent("UNION { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://www.openannotation.org/ns/constrains><" + matchuri +">}");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g a ?type}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/creator> ?user. " +
-    	 										"?user <http://xmlns.com/foaf/0.1/name> ?creator}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/language> ?lang}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/title> ?title}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasTarget> ?context}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasTarget> ?resource}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/created> ?created}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/modified> ?modified}.");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasBody> ?bodyURL. " +
-    	 										"?bodyURL <http://www.w3.org/2011/content#rest> ?body}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?privateAnno}. ");
-    	 queryUrl += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/user> ?agentId}. }");
+    	 queryUrl += encodeURIComponent("WHERE {{GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> <" + matchuri + ">.}}");
+    	 queryUrl += encodeURIComponent("UNION {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://purl.org/dc/terms/isPartOf><" + matchuri +">}}");
+    	 queryUrl += encodeURIComponent("UNION {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://www.openannotation.org/ns/constrains><" + matchuri +">}}");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g a ?type}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/creator> ?user. " +
+    	 										"?user <http://xmlns.com/foaf/0.1/name> ?creator}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/elements/1.1/language> ?lang}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/elements/1.1/title> ?title}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?context}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?resource}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/created> ?created}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/modified> ?modified}}.");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasBody> ?bodyURL. " +
+    	 										"?bodyURL <http://www.w3.org/2011/content#rest> ?body}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://auselit.metadata.net/lorestore/isPrivate> ?privateAnno}}. ");
+    	 queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://auselit.metadata.net/lorestore/user> ?agentId}}. }");
     	 queryUrl += "&output=json";
 
          Ext.Ajax.request({
@@ -58,22 +58,22 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
     getRepliesQuery : function(annoID,  scope){
     	var queryUrl = this.reposURL + "/query?query=";
    	 	queryUrl += encodeURIComponent("SELECT DISTINCT ?g ?type ?creator ?lang ?title ?context ?resource ?created ?modified ?body ?bodyURL ?privateAnno ?agentId ");
-   	 	queryUrl += encodeURIComponent("WHERE {{ ?g <http://www.openannotation.org/ns/hasTarget> <" + annoID + ">.}");
-   	 	queryUrl += encodeURIComponent("UNION { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://purl.org/dc/terms/isPartOf><" + annoID +">}");
-   	 	queryUrl += encodeURIComponent("UNION { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://www.openannotation.org/ns/constrains><" + annoID +">}");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g a ?type}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/creator> ?user. " +
-	 											"?user <http://xmlns.com/foaf/0.1/name> ?creator}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/language> ?lang}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/title> ?title}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasTarget> ?context}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasTarget> ?resource}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/created> ?created}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/modified> ?modified}.");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://www.openannotation.org/ns/hasBody> ?bodyURL. " +
-	 											"?bodyURL <http://www.w3.org/2011/content#rest> ?body}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?privateAnno}. ");
-   	 	queryUrl += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/user> ?agentId}. }");
+   	 	queryUrl += encodeURIComponent("WHERE {{GRAPH ?g { ?g <http://www.openannotation.org/ns/hasTarget> <" + annoID + ">.}}");
+   	 	queryUrl += encodeURIComponent("UNION {GRAPH ?g { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://purl.org/dc/terms/isPartOf><" + annoID +">}}");
+   	 	queryUrl += encodeURIComponent("UNION {GRAPH ?g { ?g <http://www.openannotation.org/ns/hasTarget> ?t . ?t <http://www.openannotation.org/ns/constrains><" + annoID +">}}");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g a ?type}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/creator> ?user. " +
+	 											"?user <http://xmlns.com/foaf/0.1/name> ?creator}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/elements/1.1/language> ?lang}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/elements/1.1/title> ?title}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?context}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasTarget> ?resource}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/created> ?created}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://purl.org/dc/terms/modified> ?modified}}.");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://www.openannotation.org/ns/hasBody> ?bodyURL. " +
+	 											"?bodyURL <http://www.w3.org/2011/content#rest> ?body}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://auselit.metadata.net/lorestore/isPrivate> ?privateAnno}}. ");
+   	 	queryUrl += encodeURIComponent("OPTIONAL {GRAPH ?g {?g <http://auselit.metadata.net/lorestore/user> ?agentId}}. }");
    	 	queryUrl += "&output=json";
    	    
         Ext.Ajax.request({
@@ -91,86 +91,40 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
     },
     
     saveAnnotation : function (annoRec, resultCallback,t){  
-        var annoRDF = t.createAnnoOAC([annoRec.data], t.annods, true, "xml");        
-        
-        var boundary = "---------------------------7da24f2e50046";
-        var body = 'Content-Type: multipart/form-data; boundary=' + boundary + '\r\n\r\n'
-          + '--' + boundary + '\r\n'
-          + 'Content-Disposition: form-data; name="UNSET FILE NAME"; filename="temp.xml"\r\n'
-          + 'Content-type: text/xml\r\n\r\n'
-          + annoRDF + '\r\n'
-          + '--' + boundary + '\r\n'
-          + 'Content-Disposition: form-data; name="graph";\r\n\r\n'
-          + 'default\r\n'
-          + '--' + boundary + '--';
-            
-        var insertData = function() {
-            xhr.setRequestHeader("Content-type", "multipart/form-data; boundary=" + boundary);
-            xhr.onreadystatechange = function(){
-    	        try {
-    	            if (xhr.readyState == 4) {
-    	                if (xhr.status == successfulStatus) {
-    	                    resultCallback(xhr, action);
-    	                    t.fireEvent("committedannotation", action, annoRec);
-    	                } else {
-    	                    t.fireEvent('servererror', action, xhr);
-    	                }
-    	            }
+    	var trigs = t.createAnnoOAC([annoRec.data], t.annods, true, "triples");     	
+    	var remid = annoRec.data.id;
     	
-    	        } catch(e) {
-    	            lore.debug.anno("Error sending annotation to server", e);
-    	        }
-    	    };         
-            xhr.send(body);
-            
-            lore.debug.anno("RDF of annotation", annoRDF);
-        }
+    	var xhr = new XMLHttpRequest();
+    	
+        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
         
-        var xhr = new XMLHttpRequest();
-        if (annoRec.data.isNew()) {
-            lore.debug.anno("creating new annotation");
-            var action = 'create';
-            var successfulStatus = 200;
-            xhr.open("POST", this.reposURL + "/upload");
-            insertData();
-        } else {
-            lore.debug.anno("updating existing annotation");
-            var action = 'create';
-            var successfulStatus = 200;
-            xhr.open("POST", this.reposURL + "/upload");
-            
-            var updateStr = "DELETE WHERE {<" + annoRec.data.id + "> ?p1 ?o1. " + 
-	    		"<" + annoRec.data.id + "> <http://purl.org/dc/terms/creator> ?creator. ?creator ?p2 ?o2. " + 
-	    		"<" + annoRec.data.id + "> <http://www.openannotation.org/ns/hasBody> ?body. ?body ?p3 ?o3. " + 
-	    		"<" + annoRec.data.id + "> <http://www.openannotation.org/ns/hasTarget> ?target. ?target ?p4 ?o4. }";
+        var action = "create";
+        
+        theURL = this.reposURL + "/data?graph=" + remid;
+        xhr.onreadystatechange = function() {   
+        	try {
+	            if (xhr.readyState == 4) {
+	                if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) {
+	                    resultCallback(xhr, action);
+	                    t.fireEvent("committedannotation", action, annoRec);
+	                } else {
+	                    t.fireEvent('servererror', action, xhr);
+	                }
+	            }
 	
-	        Ext.Ajax.request({
-	            url: this.reposURL + "/update",
-	            params: {
-	            	update: updateStr
-	            },
-	            success: function(){
-	            	insertData();
-	            },
-	            method: "POST"
-	        });
-        }    
+	        } catch(e) {
+	            lore.debug.anno("Error sending annotation to server", e);
+	        }
+        };
+        xhr.send(trigs);
     },
     /**
      * Delete the annotation
      * @param {String} id The URI of the annotation to remove 
      **/
     deleteAnnotation : function(id, success, failure, scope){
-    	var updateStr = "DELETE WHERE {<" + id + "> ?p1 ?o1. " + 
-    		"<" + id + "> <http://purl.org/dc/terms/creator> ?creator. ?creator ?p2 ?o2. " + 
-    		"<" + id + "> <http://www.openannotation.org/ns/hasBody> ?body. ?body ?p3 ?o3. " + 
-    		"<" + id + "> <http://www.openannotation.org/ns/hasTarget> ?target. ?target ?p4 ?o4. }";
-
         Ext.Ajax.request({
-            url: this.reposURL + "/update",
-            params: {
-            	update: updateStr
-            },
+            url: this.reposURL + "/data?graph=" + id,
             success: function(resp){
                 try{
                     if (success){
@@ -190,7 +144,7 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
                     lore.debug.anno("Error deleting annotation",ex);
                 }
             },
-            method: "POST",
+            method: "DELETE",
             scope: scope
         });
     },

@@ -189,11 +189,43 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
      */
     getExploreData : function(uri,title,isCompoundObject, callback){
         var eid = uri.replace(/&amp;/g,'&').replace(/&amp;/g,'&');
-        var eid2 = escape(eid);
-        try {
-            var queryURL = this.reposURL
-                    + "?exploreFrom=" 
-                    + eid2;
+        try {            
+            var queryURL = this.reposURL + "/query?query=";
+ 		    queryURL += encodeURIComponent("SELECT DISTINCT ?something ?somerel ?sometitle ?sometype ?creator ?modified ?anotherrel ?somethingelse ");
+ 		    queryURL += encodeURIComponent("WHERE {");
+ 		    queryURL += encodeURIComponent("{GRAPH ?g {?aggre <http://www.openarchives.org/ore/terms/aggregates> <" + uri + "> . ");
+ 		    queryURL += encodeURIComponent("?something <http://www.openarchives.org/ore/terms/describes> ?aggre . ");
+ 		    queryURL += encodeURIComponent("?something a ?sometype . ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/elements/1.1/creator> ?creator .} ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/terms/modified> ?modified .} ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/elements/1.1/title> ?sometitle .}");
+ 		    queryURL += encodeURIComponent("}}");
+ 		    queryURL += encodeURIComponent("UNION { GRAPH ?g {?something ?somerel <" + uri + "> . ");
+ 		    queryURL += encodeURIComponent("FILTER isURI(?something) .");
+ 		    queryURL += encodeURIComponent("FILTER (?somerel != <http://www.openarchives.org/ore/terms/aggregates>) . ");
+ 		    queryURL += encodeURIComponent("FILTER (?somerel != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>) . ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something a ?sometype} .");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/elements/1.1/title> ?sometitle.} ");
+ 		    queryURL += encodeURIComponent("}}");
+ 		    queryURL += encodeURIComponent("UNION {GRAPH ?g {<" + uri + "> ?somerel ?something .");
+ 		    queryURL += encodeURIComponent("FILTER isURI(?something). ");
+ 		    queryURL += encodeURIComponent("FILTER (?somerel != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>) . ");
+ 		    queryURL += encodeURIComponent("FILTER (?somerel != <http://www.openarchives.org/ore/terms/describes>) . ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something a ?sometype} .");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/elements/1.1/title> ?sometitle.}");
+ 		    queryURL += encodeURIComponent("}}");
+ 		    queryURL += encodeURIComponent("UNION {GRAPH ?g {<" + uri + "> <http://www.openarchives.org/ore/terms/describes> ?aggre .");
+ 		    queryURL += encodeURIComponent("?aggre ?somerel ?something . ");
+ 		    queryURL += encodeURIComponent("FILTER isURI(?something) .");
+ 		    queryURL += encodeURIComponent("FILTER (?somerel != <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>) .");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something <http://purl.org/dc/elements/1.1/title> ?sometitle . } . ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something ?anotherrel ?somethingelse . FILTER isURI(?somethingelse)} . ");
+ 		    queryURL += encodeURIComponent("OPTIONAL {?something a ?sometype}");
+ 		    queryURL += encodeURIComponent("}}}");
+ 		    queryURL += "&output=xml";
+ 		    
+            lore.debug.ore("Yoman");
+            lore.debug.ore(queryURL);
             
             if (this.exploreStylesheet){
                

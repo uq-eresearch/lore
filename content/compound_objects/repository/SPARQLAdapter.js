@@ -223,9 +223,6 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
  		    queryURL += encodeURIComponent("OPTIONAL {?something a ?sometype}");
  		    queryURL += encodeURIComponent("}}}");
  		    queryURL += "&output=xml";
- 		    
-            lore.debug.ore("Yoman");
-            lore.debug.ore(queryURL);
             
             if (this.exploreStylesheet){
                

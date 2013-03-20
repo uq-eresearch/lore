@@ -96,11 +96,11 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
     	
     	var xhr = new XMLHttpRequest();
     	
-        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
+        xhr.open("PUT", this.reposURL + "/graph-store?graph=" + remid);
         
         var action = "create";
         
-        theURL = this.reposURL + "/data?graph=" + remid;
+        theURL = this.reposURL + "/graph-store?graph=" + remid;
         xhr.onreadystatechange = function() {   
         	try {
 	            if (xhr.readyState == 4) {
@@ -124,7 +124,7 @@ lore.anno.repos.SPARQLAdapter = Ext.extend(lore.anno.repos.RepositoryAdapter,{
      **/
     deleteAnnotation : function(id, success, failure, scope){
         Ext.Ajax.request({
-            url: this.reposURL + "/data?graph=" + id,
+            url: this.reposURL + "/graph-store?graph=" + id,
             success: function(resp){
                 try{
                     if (success){

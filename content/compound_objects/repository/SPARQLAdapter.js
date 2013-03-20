@@ -79,7 +79,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
     },
     loadCompoundObject : function(remid, callback, failcallback){
          Ext.Ajax.request({
-        		url: this.reposURL + "/data?graph=" + remid,
+        		url: this.reposURL + "/graph-store?graph=" + remid,
                 headers: {
                     Accept: 'application/rdf+xml'
                 },
@@ -101,9 +101,9 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
           
     	var xhr = new XMLHttpRequest();
     	
-        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
+        xhr.open("PUT", this.reposURL + "/graph-store?graph=" + remid);
         
-        theURL = this.reposURL + "/data?graph=" + remid;
+        theURL = this.reposURL + "/graph-store?graph=" + remid;
         xhr.onreadystatechange = function() {            
             if (xhr.readyState == 4) {
                 Ext.Msg.hide();
@@ -149,7 +149,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
         try {
     	   	//lore.ore.am.runWithAuthorisation(function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("DELETE", this.reposURL + "/data?graph=" + remid);  
+            xhr.open("DELETE", this.reposURL + "/graph-store?graph=" + remid);  
             xhr.onreadystatechange= function(){  
                 if (xhr.readyState == 4) {
                     if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) { // OK

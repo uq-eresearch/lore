@@ -62,10 +62,11 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
 	   
 	   	queryURL += encodeURIComponent("}}");
 	   	queryURL += "&output=xml";   
-        
+        	   	
         var xhr = new XMLHttpRequest();
         xhr.open('GET', queryURL);
-        xhr.onreadystatechange = function(aEvt) {
+        
+        var readyStateChanged = function(aEvt) {
             if (xhr.readyState == 4) {
                 if (xhr.responseText && xhr.status != 204 && xhr.status < 400) {
                     var xmldoc = xhr.responseXML;
@@ -99,6 +100,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
                 }
             }
         };
+        xhr.onreadystatechange = readyStateChanged;
         xhr.send(null);
     },
     loadCompoundObject : function(remid, callback, failcallback){

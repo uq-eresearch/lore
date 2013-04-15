@@ -12,74 +12,98 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
         this.unsavedSuffix = "#unsaved";
     },
     getCompoundObjects : function(matchuri, matchpred, matchval, isSearchQuery){    	
+    	if (matchuri == null && matchpred == null && matchval == null) {
+    		return;
+    	}
+    	
         var ra = this;
-        try {
-           var escapedURL = "";
-           var altURL = "";
-           if (matchuri){
-               escapedURL = encodeURIComponent(matchuri.replace(/}/g,'%257D').replace(/{/g,'%257B'));
-           }
-           var queryURL = this.reposURL + "/query?query=";
-		   queryURL += encodeURIComponent("SELECT DISTINCT ?g ?a ?m ?t ?priv ");
-		   queryURL += encodeURIComponent("WHERE { GRAPH ?g {");
-		   queryURL += encodeURIComponent("?g <http://www.openarchives.org/ore/terms/describes> ?r.");
-		   queryURL += encodeURIComponent("?r <http://www.openarchives.org/ore/terms/aggregates> <" + matchuri + ">.");
-		   queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/creator> ?a}.");
-		   queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/modified> ?m}.");
-		   queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/title> ?t}.");
-		   queryURL += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?priv}.");
-		   queryURL += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?user}.");
-		   queryURL += encodeURIComponent("}}");
-		   queryURL += "&output=xml";   	
-            
-            var xhr = new XMLHttpRequest();
-            lore.debug.ore("SPARQLAdapter.getCompoundObjects", {queryURL:queryURL});
-            xhr.open('GET', queryURL);
-            xhr.onreadystatechange = function(aEvt) {
-                if (xhr.readyState == 4) {
-                    if (xhr.responseText && xhr.status != 204 && xhr.status < 400) {
-                        var xmldoc = xhr.responseXML;
-                        var listname = (isSearchQuery? "search" : "browse");  
-                        var result = {};
-                        if (xmldoc) {
-                            result = xmldoc.getElementsByTagNameNS(lore.constants.NAMESPACES["sparql"], "result");
-                        }
-                        lore.ore.coListManager.clear(listname);
-                        
-                        if (result.length > 0){
-                            var coList = [];
-                            var processed = {};
-                            for (var i = 0; i < result.length; i++) {
-                                var theobj = ra.parseCOFromXML(result[i]);
-                                var resultIndex = processed[theobj.uri];
-                                var existing = theobj; 
-                                if (resultIndex >= 0){
-                                    existing = coList[resultIndex];
-                                    if (existing && !existing.creator.match(theobj.creator)){
-                                        existing.creator = existing.creator + " &amp; " + theobj.creator;
-                                    }
-                                } else {
-                                   if (matchval) {theobj.searchval = matchval;}
-                                   coList.push(theobj);
-                                   processed[theobj.uri] = coList.length - 1; 
-                                }    
-                            }
-                            lore.ore.coListManager.add(coList,listname);
-                        } 
-                    } else if (xhr.status == 404){
-                        lore.debug.ore("Error: 404 accessing Resource Map repository",xhr);
+        var escapedURL = "";
+       	var altURL = "";
+       	if (matchuri){
+       		escapedURL = encodeURIComponent(matchuri.replace(/}/g,'%257D').replace(/{/g,'%257B'));
+       	}
+       	
+       	var predicate = "?p";
+   	   	if (matchpred != null || matchpred) {
+   	   		matchpred = String(matchpred);
+   	   		if (matchpred.length != 0) {
+   	   			predicate = "<" + matchpred + ">";
+   	   		}
+   	   	}
+       	
+       	var queryURL = this.reposURL + "/query?query=";
+  	   	queryURL += encodeURIComponent("SELECT DISTINCT ?g ?a ?m ?t ?priv ");
+   	   	queryURL += encodeURIComponent("WHERE { GRAPH ?g {");
+   	   	queryURL += encodeURIComponent("?g <http://www.openarchives.org/ore/terms/describes> ?r.");
+   	   	if (matchuri) {
+   	   		queryURL += encodeURIComponent("?r <http://www.openarchives.org/ore/terms/aggregates> <" + matchuri + ">.");
+   	   	}
+   	   	queryURL += encodeURIComponent("?s " + predicate + " ?o .");
+   	   	queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/creator> ?a}.");
+   	   	queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/terms/modified> ?m}.");
+   	   	queryURL += encodeURIComponent("OPTIONAL {?g <http://purl.org/dc/elements/1.1/title> ?t}.");
+   	   	queryURL += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?priv}.");
+   	   	queryURL += encodeURIComponent("OPTIONAL {?g <http://auselit.metadata.net/lorestore/isPrivate> ?user}.");
+	   
+	   	if (matchval != null) {
+		    matchval = String(matchval);
+			if (matchval[0] == "\"" && matchval[matchval.length - 1] == "\"") {
+				var temp = matchval.substring(1, matchval.length - 1);
+				queryURL += encodeURIComponent("FILTER regex(str(?o), \"" + temp + "\", \"i\").");
+			} else if (matchval.indexOf(" ") != -1) {
+				var terms = matchval.split(" ");
+				for (var i = 0; i < terms.length; i++) {
+					queryURL += encodeURIComponent("FILTER regex(str(?o), \"" + terms[i] + "\", \"i\"). ");
+				}
+			} else {
+				queryURL += encodeURIComponent("FILTER regex(str(?o), \"" + matchval + "\", \"i\").");
+			}
+	   	}
+	   
+	   	queryURL += encodeURIComponent("}}");
+	   	queryURL += "&output=xml";   
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', queryURL);
+        xhr.onreadystatechange = function(aEvt) {
+            if (xhr.readyState == 4) {
+                if (xhr.responseText && xhr.status != 204 && xhr.status < 400) {
+                    var xmldoc = xhr.responseXML;
+                    var listname = (isSearchQuery? "search" : "browse");  
+                    var result = {};
+                    if (xmldoc) {
+                        result = xmldoc.getElementsByTagNameNS(lore.constants.NAMESPACES["sparql"], "result");
                     }
+                    lore.ore.coListManager.clear(listname);
+                    
+                    if (result.length > 0){
+                        var coList = [];
+                        var processed = {};
+                        for (var i = 0; i < result.length; i++) {
+                            var theobj = ra.parseCOFromXML(result[i]);
+                            var resultIndex = processed[theobj.uri];
+                            var existing = theobj; 
+                            if (resultIndex >= 0){
+                                existing = coList[resultIndex];
+                                if (existing && !existing.creator.match(theobj.creator)){
+                                    existing.creator = existing.creator + " &amp; " + theobj.creator;
+                                }
+                            } else {
+                               if (matchval) {theobj.searchval = matchval;}
+                               coList.push(theobj);
+                               processed[theobj.uri] = coList.length - 1; 
+                            }    
+                        }
+                        lore.ore.coListManager.add(coList,listname);
+                    } 
                 }
-            };
-            xhr.send(null);
-        } catch (e) {
-            lore.debug.ore("Error: Unable to retrieve Resource Maps",e);
-            lore.ore.ui.vp.warning("Unable to retrieve Resource Maps");
-        }
+            }
+        };
+        xhr.send(null);
     },
     loadCompoundObject : function(remid, callback, failcallback){
          Ext.Ajax.request({
-        		url: this.reposURL + "/graph-store?graph=" + remid,
+        		url: this.reposURL + "/data?graph=" + remid,
                 headers: {
                     Accept: 'application/rdf+xml'
                 },
@@ -101,9 +125,9 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
           
     	var xhr = new XMLHttpRequest();
     	
-        xhr.open("PUT", this.reposURL + "/graph-store?graph=" + remid);
+        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
         
-        theURL = this.reposURL + "/graph-store?graph=" + remid;
+        theURL = this.reposURL + "/data?graph=" + remid;
         xhr.onreadystatechange = function() {            
             if (xhr.readyState == 4) {
                 Ext.Msg.hide();
@@ -149,7 +173,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
         try {
     	   	//lore.ore.am.runWithAuthorisation(function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("DELETE", this.reposURL + "/graph-store?graph=" + remid);  
+            xhr.open("DELETE", this.reposURL + "/data?graph=" + remid);  
             xhr.onreadystatechange= function(){  
                 if (xhr.readyState == 4) {
                     if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) { // OK

@@ -5,17 +5,28 @@
  */
 lore.ore.repos.RepositoryAdapter = function (baseURL){
     this.reposBase = baseURL;
-    // preload explore stylesheet
+
+    var oThis = this;
+    var params = {};
+    params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.DOM;
+    var url = document.getElementsByTagName('base')[0].href + "sparqlexplore.xsl";
+    gadgets.io.makeRequest(url, function(response){
+        oThis.exploreStylesheet = response.data;
+    }, params);
+
+    /*// preload explore stylesheet
     var xhr = new XMLHttpRequest();                
     xhr.overrideMimeType('text/xml');
     var oThis = this;
-    xhr.open("GET", '../lore/sparqlexplore.xsl');
+    xhr.open("GET", './sparqlexplore.xsl');
     xhr.onreadystatechange= function(){
         if (xhr.readyState == 4) {
-            oThis.exploreStylesheet = xhr.responseXML;
+        	console.log('456');
+        	console.log(xhr.responseXML);
+            //oThis.exploreStylesheet = xhr.responseXML;
         }
     };
-    xhr.send(null);
+    xhr.send(null);*/
 };
 Ext.apply(lore.ore.repos.RepositoryAdapter.prototype, {
     /**

@@ -105,15 +105,13 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
 	        };
 	        xhr.send(null);
 	    } catch (e) {
-	    	console.log(e);
-	    	console.log(lore);
 	        lore.debug.ore("Error: Unable to retrieve Resource Maps",e);
 	        lore.ore.ui.vp.warning("Unable to retrieve Resource Maps");
 	    }
     },
     loadCompoundObject : function(remid, callback, failcallback){
          Ext.Ajax.request({
-        		url: this.reposURL + "/data?graph=" + remid,
+        		url: this.reposURL + "/graph-store?graph=" + remid,
                 headers: {
                     Accept: 'application/rdf+xml'
                 },
@@ -135,9 +133,10 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
           
     	var xhr = new XMLHttpRequest();
     	
-        xhr.open("PUT", this.reposURL + "/data?graph=" + remid);
+        xhr.open("PUT", this.reposURL + "/graph-store?graph=" + remid);
+        xhr.setRequestHeader("Content-type", "application/turtle");
         
-        theURL = this.reposURL + "/data?graph=" + remid;
+        theURL = this.reposURL + "/graph-store?graph=" + remid;
         xhr.onreadystatechange = function() {            
             if (xhr.readyState == 4) {
                 Ext.Msg.hide();
@@ -183,7 +182,7 @@ lore.ore.repos.SPARQLAdapter = Ext.extend(lore.ore.repos.RepositoryAdapter,{
         try {
     	   	//lore.ore.am.runWithAuthorisation(function() {
             var xhr = new XMLHttpRequest();
-            xhr.open("DELETE", this.reposURL + "/data?graph=" + remid);  
+            xhr.open("DELETE", this.reposURL + "/graph-store?graph=" + remid);  
             xhr.onreadystatechange= function(){  
                 if (xhr.readyState == 4) {
                     if (xhr.status == 200 || xhr.status == 201 || xhr.status == 204) { // OK
